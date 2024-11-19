@@ -1,0 +1,16 @@
+migration:
+  createNewInstancesTarget: old
+clusters:
+  clusters:
+    old:
+      zeebeGrpc: old.YOURDOMAIN.de:443
+      zeebeRest: https://old.YOURDOMAIN.de:8082/rest
+      auth-url: https://old.YOURDOMAIN.de:443/auth/realms/camunda-platform/protocol/openid-connect/token
+      client-id: zeebe
+      client-secret: OldSecret
+    new:
+      zeebeGrpc: new.YOURDOMAIN.de:443
+      zeebeRest: https://new.YOURDOMAIN.de:8082/rest
+      auth-url: https://new.YOURDOMAIN.de:443/auth/realms/camunda-platform/protocol/openid-connect/token
+      client-id: zeebe
+      client-secret: NewSecret
