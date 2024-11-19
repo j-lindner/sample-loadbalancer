@@ -3,8 +3,7 @@ package org.camunda.community.migration.example.loadbalancer;
 import io.camunda.zeebe.client.ZeebeClient;
 import io.camunda.zeebe.client.api.response.CorrelateMessageResponse;
 import io.camunda.zeebe.client.api.response.PublishMessageResponse;
-import io.camunda.zeebe.client.impl.oauth.OAuthCredentialsProvider;
-import io.camunda.zeebe.client.impl.oauth.OAuthCredentialsProviderBuilder;
+import io.camunda.zeebe.client.impl.NoopCredentialsProvider;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -16,7 +15,7 @@ import java.util.concurrent.CompletableFuture;
 @Service
 public class LoadbalancerService {
 
-    public static final String PROCESS_ID = "BenchmarkProcess";
+    public static final String PROCESS_ID = "MyProcess";
 
     @Autowired
     private ClusterProperties clusterProperties;
@@ -36,17 +35,26 @@ public class LoadbalancerService {
         // test config
         oldZeebeClient.newTopologyRequest().send().join();
         newZeebeClient.newTopologyRequest().send().join();
+
+        // deploy process
+        oldZeebeClient.newDeployResourceCommand().addResourceFromClasspath("my_process.bpmn").send().join();
+        newZeebeClient.newDeployResourceCommand().addResourceFromClasspath("my_process.bpmn").send().join();
     }
 
     private ZeebeClient createZeebeClient(String oldNew) {
-        OAuthCredentialsProvider credentialsProvider = new OAuthCredentialsProviderBuilder()
-                .authorizationServerUrl(clusterProperties.getClusters().get(oldNew).getAuthUrl())
-                .audience("zeebe-api")
-                .clientId(clusterProperties.getClusters().get(oldNew).getClientId())
-                .clientSecret(clusterProperties.getClusters().get(oldNew).getClientSecret()).build();
+//        OAuthCredentialsProvider credentialsProvider = new OAuthCredentialsProviderBuilder()
+//                .authorizationServerUrl(clusterProperties.getClusters().get(oldNew).getAuthUrl())
+//                .audience("zeebe-api")
+//                .clientId(clusterProperties.getClusters().get(oldNew).getClientId())
+//                .clientSecret(clusterProperties.getClusters().get(oldNew).getClientSecret()).build();
 
         URI grpcAddress = URI.create(clusterProperties.getClusters().get(oldNew).getZeebeGrpc());
-        return ZeebeClient.newClientBuilder().grpcAddress(grpcAddress).credentialsProvider(credentialsProvider).build();
+        return ZeebeClient.newClientBuilder().grpcAddress(grpcAddress)
+                .preferRestOverGrpc(false)
+                .credentialsProvider(new NoopCredentialsProvider())
+                .usePlaintext()
+//                .credentialsProvider(credentialsProvider)
+                .build();
     }
 
     // new process instances will get created on old or new cluster based on property `migration.createNewInstancesTarget`
@@ -68,12 +76,12 @@ public class LoadbalancerService {
     }
 
     // CorrelateMessageResponse uses REST, so a sync response will be returned
+    // FIXME: not working currently due to JSON parsing issues
     public CorrelateMessageResponse correlateMessage(String correlationKey, String message) {
         try {
             return oldZeebeClient.newCorrelateMessageCommand().messageName(message).correlationKey(correlationKey).send().join();
         } catch( Exception e) {
             return newZeebeClient.newCorrelateMessageCommand().messageName(message).correlationKey(correlationKey).send().join();
         }
-
     }
 }

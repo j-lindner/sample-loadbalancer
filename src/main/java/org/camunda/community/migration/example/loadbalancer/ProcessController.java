@@ -24,14 +24,15 @@ public class ProcessController {
         return loadbalancerService.createProcessInstance(variables);
     }
 
-    @PostMapping("/publish/{correlationKey}/{message}")
-    public CompletableFuture<PublishMessageResponse> publishMessage(@PathVariable String correlationKey, @PathVariable String message) {
-        return loadbalancerService.publishMessage(correlationKey, message);
+    @PostMapping("/publish/{correlationKey}/{messageName}")
+    public CompletableFuture<PublishMessageResponse> publishMessage(@PathVariable("correlationKey") String correlationKey,
+            @PathVariable("messageName") String messageName) {
+        return loadbalancerService.publishMessage(correlationKey, messageName);
     }
 
-    @PostMapping("/correlate/{correlationKey}/{message}")
-    public CorrelateMessageResponse correlateMessage(@PathVariable String correlationKey, @PathVariable String message) {
-        return loadbalancerService.correlateMessage(correlationKey, message);
+    @PostMapping("/correlate/{correlationKey}/{messageName}")
+    public CorrelateMessageResponse  correlateMessage(@PathVariable("correlationKey") String correlationKey, @PathVariable("messageName") String messageName) {
+        return loadbalancerService.correlateMessage(correlationKey, messageName);
     }
 
 }
